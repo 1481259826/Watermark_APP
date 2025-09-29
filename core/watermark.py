@@ -12,7 +12,9 @@ def create_text_watermark_image(
     stroke_fill=(0,0,0,255),
     shadow_offset=(2,2),
     shadow_blur=4,
-    max_width=None
+    max_width=None,
+    bold=False,
+    italic=False
 ):
     """
     返回一个透明背景的 RGBA Image，包含绘制好的文字（含描边和阴影）。
@@ -42,17 +44,6 @@ def create_text_watermark_image(
     canvas = Image.new("RGBA", (canvas_w, canvas_h), (0,0,0,0))
     draw = ImageDraw.Draw(canvas)
 
-    # # 绘制阴影（在更大层上模糊）
-    # if shadow_blur > 0:
-    #     shadow_layer = Image.new("RGBA", canvas.size, (0,0,0,0))
-    #     sd = ImageDraw.Draw(shadow_layer)
-    #     sx = stroke_width + max(0, shadow_offset[0])
-    #     sy = stroke_width + max(0, shadow_offset[1])
-    #     sd.text((sx, sy), text, font=font, fill=(*stroke_fill[:3], int(255*0.7)))
-    #     shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=shadow_blur))
-    #     canvas = Image.alpha_composite(canvas, shadow_layer)
-    #     draw = ImageDraw.Draw(canvas)
-    
     pad = stroke_width   # 20% 字高作为 padding
     x = pad
     y = pad - int(font_size * 0.2)
@@ -67,15 +58,44 @@ def create_text_watermark_image(
         shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=shadow_blur))
         canvas = Image.alpha_composite(canvas, shadow_layer)
         draw = ImageDraw.Draw(canvas)
-
-    # # 描边（Pillow >= 8 支持 stroke_width）
-    # x = stroke_width
-    # y = stroke_width
-    # fill_color = (*color[:3], int(255 * opacity))
-    # draw.text((x, y), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
     
     fill_color = (*color[:3], int(255 * opacity))
-    draw.text((x, y), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
+    # draw.text((x, y), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
+
+    if bold or italic:
+        # 创建临时图层
+        temp_layer = Image.new("RGBA", canvas.size, (0,0,0,0))
+        temp_draw = ImageDraw.Draw(temp_layer)
+        temp_draw.text((x, y), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
+
+        # 模拟粗体
+        if bold:
+            bold_layer = Image.new("RGBA", canvas.size, (0,0,0,0))
+            bold_draw = ImageDraw.Draw(bold_layer)
+            for dx in range(-1,2):
+                for dy in range(-1,2):
+                    bold_draw.text((x+dx, y+dy), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
+            temp_layer = Image.alpha_composite(temp_layer, bold_layer)
+            
+
+        # 模拟斜体
+        if italic:
+            w,h = temp_layer.size
+            shear = 0.3  # 可以调整倾斜角度
+            temp_layer = temp_layer.transform(
+                (int(w + h*shear), h),
+                Image.AFFINE,
+                (1, shear, 0, 0, 1, 0),
+                Image.BICUBIC
+            )
+            temp_layer = temp_layer.resize((w, h), Image.BICUBIC)
+
+
+        # 合成到主画布
+        
+        canvas = Image.alpha_composite(canvas, temp_layer)
+    else:
+        draw.text((x, y), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
 
 
     return canvas  # RGBA image

@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QListWidget, QListWidgetItem,
     QHBoxLayout, QVBoxLayout, QFileDialog, QGraphicsView, QGraphicsScene,
-    QGraphicsPixmapItem, QSlider, QLineEdit, QComboBox, QMessageBox, QSpinBox, QFontComboBox, QColorDialog
+    QGraphicsPixmapItem, QSlider, QLineEdit, QComboBox, QMessageBox, QSpinBox, QFontComboBox, QColorDialog, QCheckBox
 )
 from PySide6.QtGui import QPixmap, QImage, Qt, QColor, QFont
 from PySide6.QtCore import QSize, QPointF, Signal, QObject, QThread
@@ -94,6 +94,10 @@ class MainWindow(QWidget):
         self.fontsize_spin.setRange(8, 512)
         self.fontsize_spin.setValue(48)
 
+        # 粗体/斜体复选框
+        self.bold_cb = QCheckBox("粗体")
+        self.italic_cb = QCheckBox("斜体")
+
         # 颜色选择
         self.font_color = QColor(255, 255, 255)  # 默认白色
         self.color_btn = QPushButton("选择颜色")
@@ -134,6 +138,9 @@ class MainWindow(QWidget):
         right_v.addWidget(QLabel("字体大小"))
         right_v.addWidget(self.fontsize_spin)
 
+        right_v.insertWidget(3, self.bold_cb)   # 粗体按钮
+        right_v.insertWidget(4, self.italic_cb) # 斜体按钮
+
         right_v.addWidget(QLabel("字体颜色"))
         right_v.addWidget(self.color_btn)
 
@@ -142,6 +149,7 @@ class MainWindow(QWidget):
 
         right_v.addWidget(QLabel("位置（九宫格）"))
         right_v.addWidget(self.pos_combo)
+
         right_v.addWidget(self.output_dir_btn)
         right_v.addWidget(self.output_dir_label)
 
@@ -164,6 +172,8 @@ class MainWindow(QWidget):
         # signals / interactions
         self.text_input.textChanged.connect(self.update_preview_watermark)
         self.fontsize_spin.valueChanged.connect(self.update_preview_watermark)
+        self.bold_cb.stateChanged.connect(self.update_preview_watermark)
+        self.italic_cb.stateChanged.connect(self.update_preview_watermark)
         self.opacity_slider.valueChanged.connect(self.update_preview_watermark)
         self.pos_combo.currentIndexChanged.connect(self.on_pos_changed)
 
@@ -277,14 +287,20 @@ class MainWindow(QWidget):
         font_size = self.fontsize_spin.value()
         opacity = self.opacity_slider.value() / 100.0
         # color white for now
+        color = self.font_color.getRgb()
+        bold = self.bold_cb.isChecked()
+        italic = self.italic_cb.isChecked()
+
         wm = create_text_watermark_image(
             text=text,
             font_path=self.font_path,  # can be None
             font_size=font_size,
-            color=self.font_color.getRgb(),  # (r,g,b,a)
+            color=color,  # (r,g,b,a)
             opacity=opacity,
             stroke_width=0,
-            stroke_fill=(0,0,0,255)
+            stroke_fill=(0,0,0,255),
+            bold=bold,
+            italic=italic   
         )
         return wm
 
