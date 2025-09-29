@@ -89,12 +89,12 @@ class MainWindow(QWidget):
         # 字体文件选择
         self.font_btn = QPushButton("选择字体文件(.ttf)")
         self.font_btn.clicked.connect(self.select_font_file)
-        self.font_path = None  # 默认无
+        self.font_path = "C:\\code\\Photo_Watermark2\\resources\\华文中宋.ttf"  # 默认字体
 
         # 字号
         self.fontsize_spin = QSpinBox()
         self.fontsize_spin.setRange(8, 512)
-        self.fontsize_spin.setValue(48)
+        self.fontsize_spin.setValue(64)
 
         # 粗体/斜体复选框
         self.bold_cb = QCheckBox("粗体")
