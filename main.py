@@ -1,6 +1,8 @@
 # main.py
 import sys, os, io
 from pathlib import Path
+# from tkinter import Image
+from PIL import Image
 from PySide6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QListWidget, QListWidgetItem,
     QHBoxLayout, QVBoxLayout, QFileDialog, QGraphicsView, QGraphicsScene,
@@ -112,7 +114,11 @@ class MainWindow(QWidget):
         self.opacity_slider = QSlider(Qt.Horizontal)
         self.opacity_slider.setRange(0,100)
         self.opacity_slider.setValue(60)
-        # self.opacity_slider = QSlider(Qt.Horizontal); self.opacity_slider.setRange(0,100); self.opacity_slider.setValue(60)
+
+        # 旋转角度
+        self.rotate_spin = QSlider(Qt.Horizontal)
+        self.rotate_spin.setRange(0, 360)
+        self.rotate_spin.setValue(0)
 
         # 位置
         self.pos_combo = QComboBox()
@@ -155,6 +161,9 @@ class MainWindow(QWidget):
         right_v.addWidget(QLabel("透明度"))
         right_v.addWidget(self.opacity_slider)
 
+        right_v.addWidget(QLabel("旋转角度"))
+        right_v.addWidget(self.rotate_spin)
+
         right_v.addWidget(QLabel("位置（九宫格）"))
         right_v.addWidget(self.pos_combo)
 
@@ -184,6 +193,7 @@ class MainWindow(QWidget):
         self.italic_cb.stateChanged.connect(self.update_preview_watermark)
         self.show_blur_spin.valueChanged.connect(self.update_preview_watermark)
         self.opacity_slider.valueChanged.connect(self.update_preview_watermark)
+        self.rotate_spin.valueChanged.connect(self.update_preview_watermark)
         self.pos_combo.currentIndexChanged.connect(self.on_pos_changed)
 
         # output dir
@@ -313,6 +323,12 @@ class MainWindow(QWidget):
             bold=bold,
             italic=italic   
         )
+
+        # 旋转角度
+        angle = self.rotate_spin.value()
+        if angle != 0:
+            wm = wm.rotate(angle, expand=True, resample=Image.BICUBIC)
+        
         return wm
 
 
@@ -403,6 +419,11 @@ class MainWindow(QWidget):
             bold=self.bold_cb.isChecked(),
             italic=self.italic_cb.isChecked()
         )
+
+        # 旋转角度
+        angle = self.rotate_spin.value()
+        if angle != 0:
+            wm_pil_high = wm_pil_high.rotate(angle, expand=True, resample=Image.BICUBIC)
 
         # no further resizing for now; could scale more precisely if needed
 
