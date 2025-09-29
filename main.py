@@ -98,6 +98,11 @@ class MainWindow(QWidget):
         self.bold_cb = QCheckBox("粗体")
         self.italic_cb = QCheckBox("斜体")
 
+        # 文字阴影
+        self.show_blur_spin = QSpinBox()
+        self.show_blur_spin.setRange(1, 100)
+        self.show_blur_spin.setValue(4)
+
         # 颜色选择
         self.font_color = QColor(255, 255, 255)  # 默认白色
         self.color_btn = QPushButton("选择颜色")
@@ -138,8 +143,11 @@ class MainWindow(QWidget):
         right_v.addWidget(QLabel("字体大小"))
         right_v.addWidget(self.fontsize_spin)
 
-        right_v.insertWidget(3, self.bold_cb)   # 粗体按钮
-        right_v.insertWidget(4, self.italic_cb) # 斜体按钮
+        right_v.addWidget(self.bold_cb)   # 粗体按钮
+        right_v.addWidget(self.italic_cb) # 斜体按钮
+
+        right_v.addWidget(QLabel("文字阴影"))
+        right_v.addWidget(self.show_blur_spin)
 
         right_v.addWidget(QLabel("字体颜色"))
         right_v.addWidget(self.color_btn)
@@ -174,6 +182,7 @@ class MainWindow(QWidget):
         self.fontsize_spin.valueChanged.connect(self.update_preview_watermark)
         self.bold_cb.stateChanged.connect(self.update_preview_watermark)
         self.italic_cb.stateChanged.connect(self.update_preview_watermark)
+        self.show_blur_spin.valueChanged.connect(self.update_preview_watermark)
         self.opacity_slider.valueChanged.connect(self.update_preview_watermark)
         self.pos_combo.currentIndexChanged.connect(self.on_pos_changed)
 
@@ -290,6 +299,7 @@ class MainWindow(QWidget):
         color = self.font_color.getRgb()
         bold = self.bold_cb.isChecked()
         italic = self.italic_cb.isChecked()
+        shadow_blur = self.show_blur_spin.value() if self.show_blur_spin.value() > 0 else 0
 
         wm = create_text_watermark_image(
             text=text,
@@ -299,6 +309,7 @@ class MainWindow(QWidget):
             opacity=opacity,
             stroke_width=0,
             stroke_fill=(0,0,0,255),
+            shadow_blur=shadow_blur,
             bold=bold,
             italic=italic   
         )
@@ -387,7 +398,10 @@ class MainWindow(QWidget):
             font_size=font_size,
             color=self.font_color.getRgb(),
             opacity=self.opacity_slider.value()/100.0,
-            stroke_width=0
+            stroke_width=0,
+            shadow_blur=self.show_blur_spin.value() if self.show_blur_spin.value() > 0 else 0,
+            bold=self.bold_cb.isChecked(),
+            italic=self.italic_cb.isChecked()
         )
 
         # no further resizing for now; could scale more precisely if needed
