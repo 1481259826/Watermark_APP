@@ -84,12 +84,8 @@ class MainWindow(QWidget):
         # right: controls
         self.text_input = QLineEdit("© 2025 MyBrand")
 
-         # 字体选择
-        self.font_combo = QFontComboBox()
-        self.font_combo.setCurrentFont(QFont("Arial"))
-
         # 字体文件选择
-        self.font_btn = QPushButton("选择字体文件")
+        self.font_btn = QPushButton("选择字体文件(.ttf)")
         self.font_btn.clicked.connect(self.select_font_file)
         self.font_path = None  # 默认无
 
@@ -97,8 +93,6 @@ class MainWindow(QWidget):
         self.fontsize_spin = QSpinBox()
         self.fontsize_spin.setRange(8, 512)
         self.fontsize_spin.setValue(48)
-
-        # self.fontsize_spin = QSpinBox(); self.fontsize_spin.setRange(8, 512); self.fontsize_spin.setValue(48)
 
         # 颜色选择
         self.font_color = QColor(255, 255, 255)  # 默认白色
@@ -135,9 +129,6 @@ class MainWindow(QWidget):
         right_v.addWidget(self.text_input)
 
         right_v.addWidget(QLabel("字体"))
-        right_v.addWidget(self.font_combo)
-
-        right_v.addWidget(QLabel("字体文件"))
         right_v.addWidget(self.font_btn)
 
         right_v.addWidget(QLabel("字体大小"))
@@ -172,7 +163,6 @@ class MainWindow(QWidget):
 
         # signals / interactions
         self.text_input.textChanged.connect(self.update_preview_watermark)
-        self.font_combo.currentFontChanged.connect(self.update_preview_watermark)
         self.fontsize_spin.valueChanged.connect(self.update_preview_watermark)
         self.opacity_slider.valueChanged.connect(self.update_preview_watermark)
         self.pos_combo.currentIndexChanged.connect(self.on_pos_changed)
