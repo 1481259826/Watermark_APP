@@ -182,12 +182,19 @@ class MainWindow(QWidget):
         )
         if path:
             self.font_path = path
+            self.font_btn.setText(os.path.basename(path))
             self.update_preview_watermark()
 
     def choose_color(self):
         color = QColorDialog.getColor(self.font_color, self, "选择字体颜色")
         if color.isValid():
             self.font_color = color
+            hex_code = color.name().upper()  # 转换成 #RRGGBB
+            self.color_btn.setText(hex_code)
+            # 设置按钮背景色
+            self.color_btn.setStyleSheet(
+                f"background-color: {hex_code}; color: black;"
+            )
             self.update_preview_watermark()
 
 
