@@ -1,0 +1,62 @@
+{
+    "templates": {
+        "默认模板": {
+            "text": "版权所有",
+            "font_path": "华文中宋.ttf",
+            "font_size": 40,
+            "color": [
+                255,
+                255,
+                255,
+                200
+            ],
+            "position": "右下",
+            "opacity": 0.8,
+            "bold": false,
+            "italic": false,
+            "rotate": 0,
+            "show_blur": 2,
+            "stroke_fill": [
+                0,
+                0,
+                0,
+                255
+            ]
+        },
+        "111": {
+            "text": "版权所有",
+            "font_path": "微软雅黑.ttf",
+            "font_size": 80,
+            "color": [
+                85,
+                170,
+                0,
+                255
+            ],
+            "position": "左上",
+            "opacity": 1.0,
+            "bold": true,
+            "italic": false,
+            "rotate": 34,
+            "show_blur": 4
+        },
+        "222": {
+            "text": "版权所有",
+            "font_path": "华文新魏.ttf",
+            "font_size": 80,
+            "color": [
+                255,
+                85,
+                0,
+                255
+            ],
+            "position": "中心",
+            "opacity": 1.0,
+            "bold": true,
+            "italic": true,
+            "rotate": 27,
+            "show_blur": 20
+        }
+    },
+    "last_used": "222"
+}

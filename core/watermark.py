@@ -47,8 +47,11 @@ def create_text_watermark_image(
     pad = stroke_width   # 20% 字高作为 padding
     x = pad
     y = pad - int(font_size * 0.2)
+    
+    fill_color = (*color[:3], int(255 * opacity))
+    # draw.text((x, y), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
 
-    # 绘制阴影
+        # 绘制阴影
     if shadow_blur > 0:
         shadow_layer = Image.new("RGBA", canvas.size, (0,0,0,0))
         sd = ImageDraw.Draw(shadow_layer)
@@ -58,9 +61,6 @@ def create_text_watermark_image(
         shadow_layer = shadow_layer.filter(ImageFilter.GaussianBlur(radius=shadow_blur))
         canvas = Image.alpha_composite(canvas, shadow_layer)
         draw = ImageDraw.Draw(canvas)
-    
-    fill_color = (*color[:3], int(255 * opacity))
-    # draw.text((x, y), text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
 
     if bold or italic:
         # 创建临时图层

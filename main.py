@@ -6,7 +6,8 @@ from PIL import Image
 from PySide6.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QListWidget, QListWidgetItem,
     QHBoxLayout, QVBoxLayout, QFileDialog, QGraphicsView, QGraphicsScene,
-    QGraphicsPixmapItem, QSlider, QLineEdit, QComboBox, QMessageBox, QSpinBox, QFontComboBox, QColorDialog, QCheckBox
+    QGraphicsPixmapItem, QSlider, QLineEdit, QComboBox, QMessageBox, QSpinBox, 
+    QFontComboBox, QColorDialog, QCheckBox, QInputDialog, QGraphicsItem
 )
 from PySide6.QtGui import QPixmap, QImage, Qt, QColor, QFont
 from PySide6.QtCore import QSize, QPointF, Signal, QObject, QThread
@@ -14,11 +15,13 @@ from PySide6.QtCore import QSize, QPointF, Signal, QObject, QThread
 from core.image_io import is_image_file, generate_thumbnail, open_image_fix_orientation
 from core.watermark import create_text_watermark_image
 from core.exporter import compose_watermark_on_image
-from core.templates import load_templates, save_templates
+from core.template_manager import TemplateManager
 
 from PIL.ImageQt import ImageQt
 
 APP_NAME = "WatermarkerPy - MVP"
+
+SOURCE_DIR = "resources"
 
 # Helper: pil Image -> QPixmap
 def pil_to_qpixmap(img):
@@ -57,11 +60,24 @@ class ExportWorker(QThread):
                 self.progress.emit(done, total, f"Error ({os.path.basename(t['src_path'])}): {e}")
         self.finished_signal.emit()
 
+class WatermarkItem(QGraphicsPixmapItem):
+    def __init__(self, main_window, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.main_window = main_window
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionHasChanged:
+            x, y = int(value.x()), int(value.y())
+            self.main_window.update_position_label((x, y))
+        return super().itemChange(change, value)
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(APP_NAME)
         self.resize(1100, 700)
+        self.template_manager = TemplateManager()
 
         # model
         self.image_paths = []   # list of str
@@ -89,7 +105,7 @@ class MainWindow(QWidget):
         # 字体文件选择
         self.font_btn = QPushButton("选择字体文件(.ttf)")
         self.font_btn.clicked.connect(self.select_font_file)
-        self.font_path = "C:\\code\\Photo_Watermark2\\resources\\华文中宋.ttf"  # 默认字体
+        self.font_path = "resources/华文中宋.ttf"  # 默认字体
 
         # 字号
         self.fontsize_spin = QSpinBox()
@@ -123,6 +139,9 @@ class MainWindow(QWidget):
         # 位置
         self.pos_combo = QComboBox()
         self.pos_combo.addItems(["左上","正上","右上","左中","中心","右中","左下","正下","右下"])
+    
+        # # 水印位置显示
+        # self.position_label = QLabel("坐标: (0,0)")
 
         # 其他导出配置
         self.export_btn = QPushButton("导出所选并保存水印")
@@ -130,16 +149,35 @@ class MainWindow(QWidget):
         self.output_dir_btn = QPushButton("选择输出文件夹")
         self.output_dir_btn.clicked.connect(self.select_output_dir)
         self.output_dir_label = QLabel("未选择")
-        self.format_combo = QComboBox(); self.format_combo.addItems(["png","jpeg"])
+        self.format_combo = QComboBox()
+        self.format_combo.addItems(["png","jpeg"])
         self.prefix_input = QLineEdit("")
         self.suffix_input = QLineEdit("_wm")
+
+        # 模板管理
+        self.template_combo = QComboBox()
+        self.template_combo.addItems(self.template_manager.templates.keys())
+        self.template_combo.setCurrentText(self.template_manager.last_used)
+        self.btn_load_template = QPushButton("加载模板")
+        self.btn_save_template = QPushButton("保存当前为模板")
+        self.btn_delete_template = QPushButton("删除模板")
+
 
         # layout
         left_v = QVBoxLayout()
         left_v.addWidget(import_btn)
         left_v.addWidget(self.list_widget)
 
+
         right_v = QVBoxLayout()
+
+        # 模板管理
+        right_v.addWidget(QLabel("水印模板"))
+        right_v.addWidget(self.template_combo)
+        right_v.addWidget(self.btn_load_template)
+        right_v.addWidget(self.btn_save_template)
+        right_v.addWidget(self.btn_delete_template)
+
         right_v.addWidget(QLabel("水印文本"))
         right_v.addWidget(self.text_input)
 
@@ -163,6 +201,8 @@ class MainWindow(QWidget):
 
         right_v.addWidget(QLabel("旋转角度"))
         right_v.addWidget(self.rotate_spin)
+
+        # right_v.addWidget(self.position_label)
 
         right_v.addWidget(QLabel("位置（九宫格）"))
         right_v.addWidget(self.pos_combo)
@@ -195,15 +235,113 @@ class MainWindow(QWidget):
         self.opacity_slider.valueChanged.connect(self.update_preview_watermark)
         self.rotate_spin.valueChanged.connect(self.update_preview_watermark)
         self.pos_combo.currentIndexChanged.connect(self.on_pos_changed)
+        # 按钮绑定
+        self.btn_load_template.clicked.connect(self.load_selected_template)
+        self.btn_save_template.clicked.connect(self.save_current_as_template)
+        self.btn_delete_template.clicked.connect(self.delete_selected_template)
 
         # output dir
         self.output_dir = None
 
-        # load templates (not surfaced in UI now)
-        self.templates = load_templates()
-
         # enable drag & drop for window
         self.setAcceptDrops(True)
+
+                # load templates (not surfaced in UI now)
+        self.templates = self.template_manager.load_templates()
+
+        # 加载上一次模板
+        last_template = self.template_manager.last_used
+        settings = self.template_manager.load_template(last_template)
+        if settings:
+            self.apply_template(settings)  # 载入到界面参数
+
+    def save_current_as_template(self):
+        name, ok = QInputDialog.getText(self, "保存模板", "请输入模板名称：")
+        if not ok or not name:
+            return
+        settings = self.collect_current_settings()
+        self.template_manager.save_template(name, settings)
+        self.template_combo.clear()
+        self.template_combo.addItems(self.template_manager.templates.keys())
+        self.template_combo.setCurrentText(name)
+        QMessageBox.information(self, "成功", f"模板 '{name}' 已保存")
+
+    def load_selected_template(self):
+        name = self.template_combo.currentText()
+        settings = self.template_manager.load_template(name)
+        if settings:
+            self.apply_template(settings)
+            QMessageBox.information(self, "成功", f"已加载模板 '{name}'")
+        else:
+            QMessageBox.warning(self, "错误", f"未找到模板 '{name}'")
+
+    def delete_selected_template(self):
+        name = self.template_combo.currentText()
+        if name == "默认模板":
+            QMessageBox.warning(self, "提示", "不能删除默认模板")
+            return
+        self.template_manager.delete_template(name)
+        self.template_combo.clear()
+        self.template_combo.addItems(self.template_manager.templates.keys())
+        self.template_combo.setCurrentText(self.template_manager.last_used)
+        QMessageBox.information(self, "成功", f"模板 '{name}' 已删除")
+
+    def collect_current_settings(self):
+        return {
+            "text": self.text_input.text(),
+            "font_path": self.font_btn.text(),
+            "font_size": self.fontsize_spin.value(),
+            "color": self.font_color.getRgb(),   # 假设你封装了 QColorDialog
+            "position": self.pos_combo.currentText(),
+            "opacity": self.opacity_slider.value() / 100,
+            "bold": self.bold_cb.isChecked(),
+            "italic": self.italic_cb.isChecked(),
+            "rotate": self.rotate_spin.value(),
+            "show_blur": self.show_blur_spin.value(),
+        }
+    
+    def apply_template(self, settings):
+        """将模板应用到界面控件"""
+        self.text_input.setText(settings.get("text", ""))
+
+        # 字体文件路径（假设你有个 QLineEdit 来显示字体路径）
+        if hasattr(self, "font_btn"):
+            path = settings.get("font_path", "")
+            rel_path = os.path.join(SOURCE_DIR, path)
+            self.font_btn.setText(path if path else "选择字体文件(.ttf)")
+            self.font_path = rel_path  # 保存路径
+
+        self.fontsize_spin.setValue(settings.get("font_size", 36))
+
+        # 颜色（假设你用 QLineEdit 显示颜色 RGBA）
+        if hasattr(self, "color_btn"):
+            color = settings.get("color", [255, 255, 255, 200])
+            # 格式化成 "R,G,B,A"
+            color_text = f"{color[0]}, {color[1]}, {color[2]}, {color[3]}"
+            self.color_btn.setText(color_text)
+            self.font_color = QColor(*color[:3])  # 只用 RGB
+
+        self.pos_combo.setCurrentText(settings.get("position", "右下"))
+        # self.on_pos_changed(self.pos_combo.currentIndex())
+        self.opacity_slider.setValue(int(settings.get("opacity", 0.8) * 100))
+
+        # 勾选框（粗体 / 斜体）
+        if hasattr(self, "bold_cb"):
+            self.bold_cb.setChecked(settings.get("bold", False))
+        if hasattr(self, "italic_cb"):
+            self.italic_cb.setChecked(settings.get("italic", False))
+
+        # 旋转角度（假设你用 QSpinBox）
+        if hasattr(self, "rotate_spin"):
+            self.rotate_spin.setValue(settings.get("rotate", 0))
+
+        # 描边宽度 & 颜色
+        if hasattr(self, "show_blur_spin"):
+            self.show_blur_spin.setValue(settings.get("show_blur", 4))
+
+        # 更新预览
+        self.update_preview_watermark()
+        # self.choose_color()  # 更新颜色按钮显示
 
     def select_font_file(self):
         path, _ = QFileDialog.getOpenFileName(
@@ -297,6 +435,7 @@ class MainWindow(QWidget):
         wmw = wm_pix.width(); wmh = wm_pix.height()
         self.scene.addItem(self.wm_item)
         self.wm_item.setPos(bw - wmw - 20, bh - wmh - 20)
+        self.on_pos_changed(self.pos_combo.currentIndex())
 
         # fit view
         self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
