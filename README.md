@@ -107,4 +107,4 @@ Photo_Watermark2/
 如有问题或建议，请通过以下方式联系：
 
 - 项目地址：[https://github.com/yourusername/Photo_Watermark2](https://github.com/yourusername/Photo_Watermark2)
-- 电子邮件：your.email@example.com
+- 电子邮件：1481259826@qq.com
