@@ -2,7 +2,7 @@
 
 一个简单易用的图片水印添加工具，支持批量处理、自定义水印文本、字体、颜色、透明度、位置等功能。
 
-![图片水印工具](https://github.com/yourusername/Photo_Watermark2/raw/main/screenshot.png)
+![图片水印工具](https://github.com/1481259826/Watermark_APP/raw/main/screenshot.png)
 
 ## 功能特点
 
@@ -25,7 +25,7 @@
 
 ### 环境要求
 
-- Python 3.6+
+- Python 3.11+
 - 依赖库：Pillow, PySide6
 
 ### 安装步骤
@@ -88,16 +88,6 @@ Photo_Watermark2/
 └── requirements.txt     # 依赖库列表
 ```
 
-## 贡献指南
-
-欢迎贡献代码或提出建议！请遵循以下步骤：
-
-1. Fork 本仓库
-2. 创建您的特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 打开一个 Pull Request
-
 ## 许可证
 
 本项目采用 MIT 许可证 - 详情请参阅 [LICENSE](LICENSE) 文件
@@ -106,5 +96,5 @@ Photo_Watermark2/
 
 如有问题或建议，请通过以下方式联系：
 
-- 项目地址：[https://github.com/yourusername/Photo_Watermark2](https://github.com/yourusername/Photo_Watermark2)
+- 项目地址：[https://github.com/1481259826/Watermark_APP](https://github.com/1481259826/Watermark_APP)
 - 电子邮件：1481259826@qq.com

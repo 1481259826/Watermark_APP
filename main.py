@@ -774,14 +774,50 @@ class MainWindow(QWidget):
         paths = [u.toLocalFile() for u in urls]
         self.add_paths(paths)
 
+    # def on_import(self):
+    #     """导入图片按钮点击事件处理"""
+    #     dlg = QFileDialog(self, "选择图片或文件夹")
+    #     dlg.setFileMode(QFileDialog.ExistingFiles)
+    #     dlg.setNameFilters(["Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"])
+    #     if dlg.exec():
+    #         files = dlg.selectedFiles()
+    #         self.add_paths(files)
     def on_import(self):
         """导入图片按钮点击事件处理"""
-        dlg = QFileDialog(self, "选择图片或文件夹")
-        dlg.setFileMode(QFileDialog.ExistingFiles)
-        dlg.setNameFilters(["Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"])
-        if dlg.exec():
-            files = dlg.selectedFiles()
-            self.add_paths(files)
+        # 弹出选择对话框:文件还是文件夹
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("选择导入方式")
+        dialog.setText("请选择导入方式:")
+        dialog.setIcon(QMessageBox.Question)
+
+        btn_files = dialog.addButton("导入图片文件", QMessageBox.ActionRole)
+        btn_folder = dialog.addButton("导入文件夹", QMessageBox.ActionRole)
+        btn_cancel = dialog.addButton("取消", QMessageBox.RejectRole)
+
+        dialog.exec()
+        clicked = dialog.clickedButton()
+
+        if clicked == btn_files:
+            # 选择多个文件
+            files, _ = QFileDialog.getOpenFileNames(
+                self, 
+                "选择图片文件", 
+                "", 
+                "Images (*.png *.jpg *.jpeg *.bmp *.tif *.tiff);;All Files (*)"
+            )
+            if files:
+                self.add_paths(files)
+
+        elif clicked == btn_folder:
+            # 选择文件夹
+            folder = QFileDialog.getExistingDirectory(
+                self, 
+                "选择包含图片的文件夹",
+                "",
+                QFileDialog.ShowDirsOnly
+            )
+            if folder:
+                self.add_paths([folder])
 
     def add_paths(self, paths):
         """添加图片路径到列表"""
