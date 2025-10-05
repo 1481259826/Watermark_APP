@@ -2,7 +2,7 @@
 
 一个简单易用的图片水印添加工具，支持批量处理、自定义水印文本、字体、颜色、透明度、位置等功能。
 
-![图片水印工具](https://github.com/1481259826/Watermark_APP/raw/main/screenshot.png)
+![图片水印工具](https://github.com/1481259826/Watermark_APP/raw/main/images/screenshot.png)
 
 ## 功能特点
 
